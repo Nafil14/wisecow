@@ -1,28 +1,173 @@
-# Cow wisdom web server
+# 🐄 Wisecow — Kubernetes Deployment
 
-## Prerequisites
+Containerization and deployment of the **Wisecow** application on Kubernetes with CI/CD automation, health monitoring scripts, and zero-trust security policy.
+
+**GitHub:** [github.com/Nafil14](https://github.com/Nafil14)  
+**DockerHub:** `nafil14/wisecow-app`
+
+---
+
+## Technologies Used
+
+| Category | Tool |
+|---|---|
+| Containerization | Docker |
+| Orchestration | Kubernetes |
+| CI/CD | GitHub Actions |
+| Scripting | Bash |
+| Registry | DockerHub |
+| Security | KubeArmor |
+
+---
+
+## Project Structure
 
 ```
-sudo apt install fortune-mod cowsay -y
+.
+├── .github/workflows/
+│   └── docker-build.yml        # CI/CD pipeline
+├── k8s/
+│   ├── deployment.yaml         # Kubernetes Deployment
+│   └── service.yaml            # NodePort Service
+├── security/
+│   └── kubearmor-policy.yaml   # Zero-trust security policy
+├── screenshots/                # Project screenshots
+├── Dockerfile                  # Container image definition
+├── wisecow.sh                  # Main application script
+├── app-health.sh               # Application health checker
+├── system-monitor.sh           # System metrics monitor
+└── README.md
 ```
 
-## How to use?
+---
 
-1. Run `./wisecow.sh`
-2. Point the browser to server port (default 4499)
+## Dockerization
 
-## What to expect?
-![wisecow](https://github.com/nyrahul/wisecow/assets/9133227/8d6bfde3-4a5a-480e-8d55-3fef60300d98)
+Build, tag, and push the image to DockerHub:
 
-# Problem Statement
-Deploy the wisecow application as a k8s app
+```bash
+docker build -t nafil14/wisecow-app:v1 .
+docker tag wisecow-app nafil14/wisecow-app:v1
+docker push nafil14/wisecow-app:v1
+```
 
-## Requirement
-1. Create Dockerfile for the image and corresponding k8s manifest to deploy in k8s env. The wisecow service should be exposed as k8s service.
-2. Github action for creating new image when changes are made to this repo
-3. [Challenge goal]: Enable secure TLS communication for the wisecow app.
+![Docker Login and Image Push](screenshots/01-docker-push.png)
 
-## Expected Artifacts
-1. Github repo containing the app with corresponding dockerfile, k8s manifest, any other artifacts needed.
-2. Github repo with corresponding github action.
-3. Github repo should be kept private and the access should be enabled for following github IDs: nyrahul
+---
+
+## CI/CD Pipeline
+
+GitHub Actions workflow (`.github/workflows/docker-build.yml`) automates Docker image build and push to DockerHub on every commit to `main`.
+
+![GitHub Actions Workflow Commit](screenshots/02-github-actions-commit.png)
+
+---
+
+## Kubernetes Deployment
+
+Apply the deployment and service manifests:
+
+```bash
+kubectl apply -f k8s/deployment.yaml
+kubectl apply -f k8s/service.yaml
+```
+
+### Check Pods
+
+```bash
+kubectl get pods
+```
+
+![kubectl get pods](screenshots/07-kubectl-get-pods.png)
+
+### Check Services
+
+```bash
+kubectl get svc
+```
+
+![kubectl get svc](screenshots/08-kubectl-get-svc.png)
+
+### Access the Application
+
+```bash
+kubectl port-forward service/wisecow-service 8080:80
+curl localhost:8080
+```
+
+![curl output — joke](screenshots/03-curl-output-joke.png)
+
+![curl output — Tolkien quote](screenshots/09-curl-output-tolkien.png)
+
+---
+
+## Monitoring Scripts
+
+### Application Health Checker
+
+```bash
+./app-health.sh
+```
+
+Performs an HTTP health check and prints `Application is UP` or `Application is DOWN`.
+
+![app-health.sh output](screenshots/04-app-health-up.png)
+
+### System Health Monitor
+
+```bash
+./system-monitor.sh
+```
+
+Reports CPU usage, memory usage, disk usage, and application availability.
+
+![system-monitor.sh output](screenshots/05-system-monitor.png)
+
+---
+
+## KubeArmor Zero-Trust Security Policy
+
+A KubeArmor policy (`security/kubearmor-policy.yaml`) enforces zero-trust security inside the container:
+
+- Blocks shell execution (`/bin/sh`, `/bin/bash`)
+- Targets pods via label selector: `app: wisecow`
+- Policy name: `block-shell`
+- API version: `security.kubearmor.com/v1`
+
+```bash
+kubectl apply -f security/kubearmor-policy.yaml
+```
+
+![KubeArmor Policy Apply](screenshots/06-kubearmor-policy.png)
+
+> **Note:** The playground environment does not have KubeArmor CRDs pre-installed, so live policy enforcement could not be demonstrated. The policy YAML is included for production cluster use.
+
+---
+
+## Architecture Flow
+
+```
+GitHub Repository
+        │
+        ▼
+GitHub Actions CI/CD
+        │  (build + push on every commit to main)
+        ▼
+DockerHub — nafil14/wisecow-app:v1
+        │
+        ▼
+Kubernetes Deployment (2 replicas)
+        │
+        ▼
+NodePort Service (port 80:31246)
+        │
+        ▼
+Wisecow App (random quotes via cowsay)
+```
+
+---
+
+## Author
+
+**Nafil A**  
+GitHub: [github.com/Nafil14](https://github.com/Nafil14)
